@@ -1,0 +1,82 @@
+// Keywords: Recent sweep - soft, complete no gene flow
+
+initialize() {
+	initializeMutationRate(7e-8);
+	initializeMutationType("m1", 0.5, "f", 0.0);
+	initializeMutationType("m2", 1.0, "f", 0.5);  // sweep mutation 
+	initializeGenomicElementType("g1",m1,1.0);
+	initializeGenomicElement(g1, 0, 499);
+	initializeRecombinationRate(1.4e-7);
+	m2.color = "green";
+}
+
+
+
+// Start running ancestral population
+1 {
+	defineConstant("path","/recentsweep_soft/");
+	defineConstant("simID", getSeed());
+	sim.addSubpop("p1",1250);
+	p1.tag = 0;
+	defineConstant("soft_thresh",runif(1,0.05,0.25));
+}
+
+// Set fitness of mutation to neutral in pop 1
+fitness(m2, p1) { return 1.0; }
+
+//Start period of isolation
+20000 late() {
+	// split the populations in half
+	sim.addSubpopSplit("p2", 5800, p1);
+	
+	// instantaneous population size change
+	p1.setSubpopulationSize(6600);
+	p2.setSubpopulationSize(5800);
+}
+
+21822 late() {	
+	// save the state of the simulation
+	sim.outputFull("/tmp/slim_" + simID + ".txt");
+	
+	// introduce the sweep mutation
+	target = sample(p2.genomes, 1);
+	target.addNewDrawnMutation(m2, 250);
+}
+21822:21951 late() {
+if (sim.countOfMutationsOfType(m2) == 0)
+	{
+ 		cat(simID + ": LOST – RESTARTING\n");
+
+ 		// go back to generation 1000
+ 		sim.readFromPopulationFile("/tmp/slim_" + simID + ".txt");
+
+ 		// start a newly seeded run
+ 		setSeed(rdunif(1, 0, asInteger(2^62) - 1));
+
+		p1.setSubpopulationSize(6600);
+		p2.setSubpopulationSize(5800);
+
+ 		// re-introduce the sweep mutation
+ 		target = sample(p2.genomes, 1);
+ 		target.addNewDrawnMutation(m2, 250);
+ 	}
+else if (sim.mutationFrequencies(p2, sim.mutationsOfType(m2)) >= soft_thresh) 
+	{
+ 	cat(simID + ": ESTABLISHED - CONVERTING TO BENEFICIAL\n");
+ 	mut = sim.mutationsOfType(m2);
+ 	mut.setSelectionCoeff(0.5);
+ 	}
+}
+
+
+
+21952 late() {
+	if (sim.mutationFrequencies(p2, sim.mutationsOfType(m2)) != 1)
+	{
+ 	cat(simID + ": NOT FIXED DURING ISOLATION - partial sweep\n");
+ 	defineConstant("fix","partial");
+ 	}
+ 	else { defineConstant("fix","complete"); }
+	p1.outputMSSample(40, filePath=paste0(c(path,"recentsweep_soft_",fix,"_run",run,"_pop1.ms")));
+	p2.outputMSSample(28, filePath=paste0(c(path,"recentsweep_soft_",fix,"_run",run,"_pop2.ms")));
+}

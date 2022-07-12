@@ -1,0 +1,35 @@
+// Keywords: Neutral - no gene flow
+
+initialize() {
+	initializeMutationRate(7e-8);
+	initializeMutationType("m1", 0.5, "f", 0.0);
+	initializeGenomicElementType("g1",m1,1.0);
+	initializeGenomicElement(g1, 0, 499);
+	initializeRecombinationRate(1.4e-7);
+}
+
+
+// Start running ancestral population
+1 {
+	defineConstant("path","/neutral_nogeneflow/");
+	defineConstant("simID", getSeed());
+	sim.addSubpop("p1",1250);
+	p1.tag = 0;
+}
+
+
+//Start period of isolation
+20000 late() {
+	// split the populations in half
+	sim.addSubpopSplit("p2", 5800, p1);
+	
+	// instantaneous population size change
+	p1.setSubpopulationSize(6600);
+	p2.setSubpopulationSize(5800);	
+}
+
+
+21952 late() {
+	p1.outputMSSample(40, filePath=paste0(c(path,"neutral_nogeneflow_run",run,"_pop1.ms")));
+	p2.outputMSSample(28, filePath=paste0(c(path,"neutral_nogeneflow_run",run,"_pop2.ms")));
+}

@@ -1,0 +1,19 @@
+// Search ranges and rules file
+// ****************************
+
+[PARAMETERS]
+//#isInt? #name   #dist.#min  #max 
+//all Ns are in number of haploid individuals
+1  NPOP1       logunif  10   1e8   output
+1  NPOP2       logunif  10   1e8   output
+1  NANC        logunif  10   1e7   output
+0  MIG2      	logunif	0.000001 0.002   output
+0  MIG1      	logunif	0.000001 MIG2   output	paramInRange
+0  MIG3         logunif 0.000001 0.001   output
+0  MIG4         logunif 0.000001 0.001   output
+1  CHANGEM        unif     10   1e6   output
+1  TISO        unif     10   1e6   hide
+
+[COMPLEX PARAMETERS]
+0  RESIZE0   = NANC/NPOP1      hide
+1  TDIV      = CHANGEM+TISO   output
